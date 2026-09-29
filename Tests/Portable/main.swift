@@ -66,4 +66,16 @@ check("readback matching succeeds", VerifiedLevelIO.write(0.3, elements: [1], se
 let relaunched = SafeVolumeController(restoreLevels: controller.restoreLevels)
 check("relaunch restores muted device's saved level only on request", relaunched.muteTargets([DeviceLevel(uid: "a", volume: 0, muted: true)], muted: false).first?.volume == 0.2)
 check("external positive level takes precedence over stale restore", relaunched.muteTargets([DeviceLevel(uid: "a", volume: 0.8, muted: true)], muted: false).first?.volume == 0.8)
+// Aggregate membership must not be intersected with transient enumeration.
+let memberA = AudioDevice(id: 1, uid: "a", name: "Speaker", manufacturer: "Apple", kind: .builtIn, outputChannels: 2, canSetVolume: true, canSetMute: true)
+let pair = AudioDevice(id: 3, uid: "pair", name: "Pair", manufacturer: "Apple", kind: .aggregate, outputChannels: 2, canSetVolume: false, canSetMute: false, aggregateSubDeviceUIDs: ["a", "b"])
+let expected = AudioDevice.selectionForSystemOutput(uid: "pair", devices: [pair, memberA])!
+check("aggregate retains missing declared member", expected == ["a", "b"])
+let missingController = SafeVolumeController()
+let missingStates = expected.sorted().map { DeviceLevel(uid: $0, volume: $0 == "a" ? 0 : nil, muted: $0 == "a" ? true : nil) }
+missingController.observe(missingStates)
+check("missing aggregate member prevents observed mute", !missingController.isMuted)
+let missingOutcomes = missingController.apply(missingController.muteTargets(missingStates, muted: true), write: { $0.uid == "a" }, read: { uid in missingStates.first { $0.uid == uid }! })
+check("missing aggregate member is an unconfirmed outcome", missingOutcomes.filter { !$0.confirmed }.map(\.uid) == ["b"])
+check("missing aggregate member prevents applied mute", !missingController.isMuted)
 if failures > 0 { exit(1) }

@@ -27,7 +27,7 @@ open "$HOME/Applications/VolX.app"
 
 - 启动、刷新、切换输出只读取实际音量与硬件静音，不回放旧的音量/静音设置。
 - 每台设备独立记录静音前音量，按 UID 持久保存；仅明确取消静音时恢复。硬件已有正音量优先于旧恢复值。
-- 写入后逐通道读回；任一失败都不宣称全部成功。面板可滚动状态文本和 HUD 列出未确认的设备。
+- 写入后逐通道读回；任一失败都不宣称全部成功。面板可滚动状态文本和 HUD 列出未确认的设备。多输出保留所有声明成员；枚举缺失的成员视为未知并以 UID 报告未确认，不误报全部静音。
 - 取消静音先写入目标音量，确认后才解除硬件静音，避免突然恢复到未知大音量。
 - 仅拦截原生 NX 音量媒体事件；普通 F10/F11/F12、其他按键和 Shift/Control/Option/Command 组合交给系统。不注册 Carbon F 键，不使用会重复写入的全局监听兜底。
 - 没有权限时不拦截；系统原生音量处理仍可用。授权后会重试建立 event tap。没有普通键码日志。
@@ -42,12 +42,12 @@ open "$HOME/Applications/VolX.app"
 ## 自动测试
 
 ```bash
-bash scripts/test-portable.sh          # Linux/macOS；直接编译应用真实 SafeVolumeCore.swift
+bash scripts/test-portable.sh          # Linux/macOS；直接编译应用真实 SafeVolumeCore.swift 和 AudioDevice.swift
 swift test                             # 仅 Mac：VolumeModel fake-store 集成及 NSEvent 事件测试
 swiftc -frontend -parse Sources/MultiOutputVolume/*.swift Tests/Mac/*.swift
 ```
 
-`SWIFTC=/path/to/swiftc bash scripts/test-portable.sh` 可选择工具链。便携测试覆盖实际状态观察、部分静音失败、独立恢复、持久恢复、通道部分写入、读回不一致、媒体键筛选、重复静音、部分输出切换。Mac 测试尚未在本次环境执行。
+`SWIFTC=/path/to/swiftc bash scripts/test-portable.sh` 可选择工具链。39 项便携检查覆盖声明成员枚举缺失、实际状态观察、部分静音失败、独立恢复、持久恢复、通道部分写入、读回不一致、媒体键筛选、重复静音、部分输出切换。Mac 测试尚未在本次环境执行。
 
 只读设备检查：
 

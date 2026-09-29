@@ -78,8 +78,6 @@ final class VolumeModel: ObservableObject {
 
     func refreshDevices() {
         devices = store.outputDevices()
-        let availableUIDs = Set(devices.map(\.uid))
-        selectedDeviceUIDs = Set(selectedDeviceUIDs.filter { availableUIDs.contains($0) })
         syncSelectionFromSystemOutput()
         syncVolumeFromSelectedDevices()
     }
@@ -292,17 +290,8 @@ final class VolumeModel: ObservableObject {
         source != .globalMonitor
     }
 
-    static func selectionForSystemOutput(
-        uid: String,
-        devices: [AudioDevice]
-    ) -> Set<String>? {
-        guard let output = devices.first(where: { $0.uid == uid }) else { return nil }
-        if output.kind == .aggregate {
-            return Set(devices.filter {
-                $0.kind != .aggregate && output.aggregateSubDeviceUIDs.contains($0.uid)
-            }.map(\.uid))
-        }
-        return [output.uid]
+    static func selectionForSystemOutput(uid: String, devices: [AudioDevice]) -> Set<String>? {
+        AudioDevice.selectionForSystemOutput(uid: uid, devices: devices)
     }
 
     private func syncSelectionFromSystemOutput() {
@@ -334,9 +323,12 @@ final class VolumeModel: ObservableObject {
     }
 
     private func readSelectedLevels() -> [DeviceLevel] {
-        selectedDevices.map { device in
-            DeviceLevel(uid: device.uid, volume: store.volume(deviceID: device.id),
-                        muted: store.isMuted(deviceID: device.id))
+        selectedDeviceUIDs.sorted().map { uid in
+            guard let device = selectedDevices.first(where: { $0.uid == uid }) else {
+                return DeviceLevel(uid: uid, volume: nil, muted: nil)
+            }
+            return DeviceLevel(uid: uid, volume: store.volume(deviceID: device.id),
+                               muted: store.isMuted(deviceID: device.id))
         }
     }
 
@@ -347,8 +339,11 @@ final class VolumeModel: ObservableObject {
     }
 
     private func applyVolume(_ newValue: Float, showHUD: Bool) {
-        let targets = selectedDevices.map {
-            DeviceTarget(uid: $0.uid, volume: deviceVolume(newValue, for: $0), muted: false)
+        let targets = selectedDeviceUIDs.sorted().map { uid in
+            let device = selectedDevices.first { $0.uid == uid }
+            return DeviceTarget(uid: uid,
+                                volume: device.map { deviceVolume(newValue, for: $0) } ?? newValue,
+                                muted: false)
         }
         applyTargets(targets, showHUD: showHUD)
     }

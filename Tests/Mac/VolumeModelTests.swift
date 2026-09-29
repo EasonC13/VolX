@@ -4,13 +4,14 @@ import XCTest
 final class FakeAudioStore: AudioDeviceStoring {
     var output = "pair"
     var writes = 0
+    var omitB = false
     var failUID: String?
     var levels: [String: Float] = ["a": 0.2, "b": 0.7]
     var mutes: [String: Bool] = ["a": true, "b": false]
     let a = AudioDevice(id: 1, uid: "a", name: "Speaker", manufacturer: "Apple", kind: .builtIn, outputChannels: 2, canSetVolume: true, canSetMute: true)
     let b = AudioDevice(id: 2, uid: "b", name: "Headphones", manufacturer: "Apple", kind: .builtIn, outputChannels: 2, canSetVolume: true, canSetMute: true)
     func outputDevices() -> [AudioDevice] {
-        [a, b, AudioDevice(id: 3, uid: "pair", name: "Pair", manufacturer: "Apple", kind: .aggregate, outputChannels: 2, canSetVolume: false, canSetMute: false, aggregateSubDeviceUIDs: ["a", "b"])]
+        [a, b, AudioDevice(id: 3, uid: "pair", name: "Pair", manufacturer: "Apple", kind: .aggregate, outputChannels: 2, canSetVolume: false, canSetMute: false, aggregateSubDeviceUIDs: ["a", "b"])].filter { !omitB || $0.uid != "b" }
     }
     func uid(_ id: UInt32) -> String { id == 1 ? "a" : "b" }
     func defaultOutputUID() -> String? { output }
@@ -54,6 +55,25 @@ final class VolumeModelTests: XCTestCase {
         XCTAssertEqual(store.writes, 0)
         XCTAssertEqual(model.activeOutputUID, "b")
         XCTAssertTrue(model.lastStatus.contains("未全部成功"))
+    }
+
+    @MainActor func testMissingDeclaredAggregateMemberRemainsUnconfirmed() {
+        let store = FakeAudioStore()
+        store.omitB = true
+        store.levels["a"] = 0
+        let model = VolumeModel(defaults: UserDefaults(suiteName: UUID().uuidString)!, store: store)
+        model.refreshDevices()
+        XCTAssertEqual(model.selectedDeviceUIDs, ["a", "b"])
+        XCTAssertFalse(model.isMuted)
+        model.toggleMute(showHUD: false)
+        XCTAssertFalse(model.isMuted)
+        XCTAssertTrue(model.lastStatus.contains("未确认：b"))
+        model.refreshDevices()
+        XCTAssertEqual(model.selectedDeviceUIDs, ["a", "b"])
+        XCTAssertFalse(model.isMuted)
+        model.setUnifiedVolume(0, showHUD: false)
+        XCTAssertFalse(model.isMuted)
+        XCTAssertTrue(model.lastStatus.contains("未确认：b"))
     }
 
     @MainActor func testPartialMuteAndRestore() {
