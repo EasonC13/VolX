@@ -1,0 +1,57 @@
+name: Fork macOS build
+on:
+  push:
+    branches: [fork/release-safe-volume]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: macos-15
+    timeout-minutes: 20
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_26.3.app/Contents/Developer
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Toolchain
+        run: |
+          xcodebuild -version
+          swift --version
+          uname -m
+          xcrun --sdk macosx --show-sdk-version
+      - name: Portable and macOS unit tests
+        run: |
+          bash scripts/test-portable.sh
+          swift test
+      - name: Build and verify app
+        run: |
+          bash scripts/build-app.sh
+          codesign --verify --deep --strict .build/VolX.app
+          file .build/VolX.app/Contents/MacOS/MultiOutputVolume
+      - name: Package and verify DMG
+        run: |
+          mkdir -p dist .build/dmg-root
+          ditto .build/VolX.app .build/dmg-root/VolX.app
+          ln -s /Applications .build/dmg-root/Applications
+          cp LICENSE .build/dmg-root/LICENSE
+          cp README.md .build/dmg-root/README.md
+          printf 'Source: %s\nSigning: ad-hoc; not Developer ID signed or notarized.\nHardware audio behavior is not validated by CI.\n' "$GITHUB_SHA" > .build/dmg-root/BUILD.txt
+          ARCH="$(uname -m)"
+          hdiutil create -volname 'VolX Safe Volume' -srcfolder .build/dmg-root -ov -format UDZO "dist/VolX-safe-volume-${ARCH}.dmg"
+          hdiutil verify "dist/VolX-safe-volume-${ARCH}.dmg"
+          hdiutil attach -readonly -nobrowse -mountpoint .build/dmg-check "dist/VolX-safe-volume-${ARCH}.dmg"
+          test -x .build/dmg-check/VolX.app/Contents/MacOS/MultiOutputVolume
+          test "$(readlink .build/dmg-check/Applications)" = /Applications
+          codesign --verify --deep --strict .build/dmg-check/VolX.app
+          hdiutil detach .build/dmg-check
+          cp .build/dmg-root/BUILD.txt dist/BUILD.txt
+          cd dist
+          shasum -a 256 *.dmg > SHA256SUMS
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: volx-macos
+          path: dist/
+          if-no-files-found: error
+          retention-days: 14
