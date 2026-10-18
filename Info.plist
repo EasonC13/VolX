@@ -19,9 +19,9 @@
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleShortVersionString</key>
-    <string>0.3.6-fixed.1</string>
+    <string>0.3.6-fixed.2</string>
     <key>CFBundleVersion</key>
-    <string>10</string>
+    <string>11</string>
     <key>LSMinimumSystemVersion</key>
     <string>14.0</string>
     <key>LSUIElement</key>
@@ -31,7 +31,7 @@
     <key>NSHumanReadableCopyright</key>
     <string>Open source local utility.</string>
     <key>NSAppleEventsUsageDescription</key>
-    <string>用于打开系统声音设置。</string>
+    <string>启用 Command＋音量鍵后，控制 Apple Music 应用音量（包括其 AirPlay 输出）；不会启动 Music 或更改系统输出。</string>
     <key>NSInputMonitoringUsageDescription</key>
     <string>仅用于接管原生音量媒体键，不拦截普通或组合功能键。</string>
     <key>NSLocalNetworkUsageDescription</key>

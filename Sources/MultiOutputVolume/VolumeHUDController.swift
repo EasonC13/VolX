@@ -24,6 +24,10 @@ final class VolumeHUDController {
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.15, execute: workItem)
     }
 
+    func showUnavailable(title: String, anchorRect: NSRect?) {
+        show(title: title, volume: -1, isMuted: false, anchorRect: anchorRect)
+    }
+
     private func makePanel() -> NSPanel {
         let panel = NSPanel(
             contentRect: NSRect(origin: .zero, size: panelSize),
@@ -99,7 +103,7 @@ struct VolumeHUDView: View {
                     .font(.system(size: 13, weight: .semibold))
                     .lineLimit(1)
                 Spacer(minLength: 8)
-                Text("\(Int((volume * 100).rounded()))%")
+                Text(volume < 0 ? "—" : "\(Int((volume * 100).rounded()))%")
                     .font(.system(size: 11, weight: .medium, design: .rounded))
                     .foregroundStyle(.secondary)
             }
@@ -113,7 +117,7 @@ struct VolumeHUDView: View {
                         Capsule().fill(.primary.opacity(0.16))
                         Capsule()
                             .fill(.primary.opacity(isMuted ? 0 : 0.72))
-                            .frame(width: proxy.size.width * CGFloat(isMuted ? 0 : volume))
+                            .frame(width: proxy.size.width * CGFloat(isMuted ? 0 : max(0, volume)))
                     }
                 }
                 .frame(height: 5)
@@ -121,6 +125,7 @@ struct VolumeHUDView: View {
                     .font(.system(size: 14, weight: .semibold))
                     .frame(width: 18)
             }
+            .opacity(volume < 0 ? 0 : 1)
         }
         .foregroundStyle(.primary)
         .padding(.horizontal, 14)

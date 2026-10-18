@@ -17,6 +17,35 @@ final class VolumeModel: ObservableObject {
     @Published private(set) var hotKeyEvents: [HotKeyEventRecord] = []
     @Published var launchAtLoginEnabled: Bool
 
+    @Published var commandMusicEnabled: Bool {
+        didSet {
+            defaults.set(commandMusicEnabled, forKey: "commandMusicEnabled")
+            keyMonitor.musicEnabled = commandMusicEnabled
+        }
+    }
+    private let musicQueue = DispatchQueue(label: "VolX.Music", qos: .userInitiated)
+    private let musicController = MusicVolumeController(backend: AppleMusicBackend())
+
+    func handleMusic(_ action: VolumeKeyAction) {
+        guard commandMusicEnabled else { return }
+        let controller = musicController
+        musicQueue.async { [weak self] in
+            let result = Result { try controller.apply(action) }
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                switch result {
+                case .success(let level):
+                    self.lastStatus = "Music \(level == 0 ? "静音" : "音量") \(level)%"
+                    self.hud.show(title: self.lastStatus, volume: Float(level) / 100,
+                                  isMuted: level == 0, anchorRect: self.hudAnchorProvider?())
+                case .failure(let error):
+                    self.lastStatus = error.localizedDescription
+                    self.hud.showUnavailable(title: self.lastStatus, anchorRect: self.hudAnchorProvider?())
+                }
+            }
+        }
+    }
+
     let preferredGroupName = "显示器 + 音箱"
     static let outputSelectionShowsHUD = false
     var hudAnchorProvider: (() -> NSRect?)?
@@ -33,6 +62,7 @@ final class VolumeModel: ObservableObject {
     private var defaultOutputTimer: Timer?
 
     init(defaults: UserDefaults = .standard, store: AudioDeviceStoring = CoreAudioDeviceStore()) {
+        self.commandMusicEnabled = defaults.bool(forKey: "commandMusicEnabled")
         self.defaults = defaults
         self.store = store
         let savedRestore = (defaults.dictionary(forKey: "restoreLevelsByUID") ?? [:])
@@ -57,6 +87,8 @@ final class VolumeModel: ObservableObject {
             keyMonitor.onAction = { [weak self] action, source in
                 self?.handle(action, source: source)
             }
+            keyMonitor.musicEnabled = commandMusicEnabled
+            keyMonitor.onMusicAction = { [weak self] action in self?.handleMusic(action) }
             keyMonitor.start()
         }
         refreshTimer = Timer.scheduledTimer(withTimeInterval: 3, repeats: true) { [weak self] _ in

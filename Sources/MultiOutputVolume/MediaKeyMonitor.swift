@@ -23,6 +23,8 @@ struct RawHotKeyEventRecord: Sendable {
 }
 
 final class MediaKeyMonitor: @unchecked Sendable {
+    var musicEnabled = false
+    var onMusicAction: (@MainActor (VolumeKeyAction) -> Void)?
     var onAction: (@MainActor (VolumeKeyAction, VolumeKeySource) -> Void)?
     var onRawEvent: (@MainActor (RawHotKeyEventRecord) -> Void)?
     private var eventTap: CFMachPort?
@@ -102,6 +104,12 @@ final class MediaKeyMonitor: @unchecked Sendable {
         if type == .tapDisabledByTimeout || type == .tapDisabledByUserInput {
             if let eventTap { CGEvent.tapEnable(tap: eventTap, enable: true) }
             return Unmanaged.passUnretained(event)
+        }
+        if type == systemDefinedEventType, let ns = NSEvent(cgEvent: event),
+           let decision = MusicVolumeKey.decode(type: type.rawValue, subtype: Int(ns.subtype.rawValue),
+               data: ns.data1, modifiers: UInt64(ns.modifierFlags.rawValue), enabled: musicEnabled) {
+            if let action = decision.action { Task { @MainActor in self.onMusicAction?(action) } }
+            return nil
         }
         guard type == systemDefinedEventType,
               let nsEvent = NSEvent(cgEvent: event),
