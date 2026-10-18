@@ -24,6 +24,6 @@ cp "$ROOT/Info.plist" "$CONTENTS/Info.plist"
 cp "$ROOT/.build/$CONFIGURATION/MultiOutputVolume" "$MACOS/MultiOutputVolume"
 cp "$ROOT/Resources/AppIcon.icns" "$RESOURCES/AppIcon.icns"
 chmod +x "$MACOS/MultiOutputVolume"
-codesign --force --deep --sign - "$APP_DIR"
+codesign --force --deep --entitlements "$ROOT/Resources/VolX.entitlements" --sign - "$APP_DIR"
 
 echo "$APP_DIR"

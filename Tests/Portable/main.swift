@@ -78,4 +78,27 @@ check("missing aggregate member prevents observed mute", !missingController.isMu
 let missingOutcomes = missingController.apply(missingController.muteTargets(missingStates, muted: true), write: { $0.uid == "a" }, read: { uid in missingStates.first { $0.uid == uid }! })
 check("missing aggregate member is an unconfirmed outcome", missingOutcomes.filter { !$0.confirmed }.map(\.uid) == ["b"])
 check("missing aggregate member prevents applied mute", !missingController.isMuted)
+check("Music command opt-in", MusicVolumeKey.decode(type: 14, subtype: 8, data: 0x0a00, modifiers: 1 << 20, enabled: true)?.action == .increase)
+check("Music command disabled passes through", MusicVolumeKey.decode(type: 14, subtype: 8, data: 0x0a00, modifiers: 1 << 20, enabled: false) == nil)
+check("Music rejects Control", MusicVolumeKey.decode(type: 14, subtype: 8, data: 0x0a00, modifiers: 1 << 18, enabled: true) == nil)
+check("Music rejects ordinary F key", MusicVolumeKey.decode(type: 10, subtype: 8, data: 0x0a00, modifiers: 1 << 20, enabled: true) == nil)
+final class PortableMusic: MusicVolumeBackend {
+    var value = 99
+    var running = true
+    var reject = false
+    var reads = 0
+    func isRunning() -> Bool { running }
+    func read() throws -> Int { reads += 1; return value }
+    func write(_ volume: Int) throws { if !reject { value = volume } }
+}
+let musicBackend = PortableMusic()
+let music = MusicVolumeController(backend: musicBackend)
+check("Music clamps upper bound", (try? music.apply(.increase)) == 100)
+check("Music mute", (try? music.apply(.mute)) == 0)
+check("Music restores level", (try? music.apply(.mute)) == 100)
+musicBackend.reject = true
+check("Music readback mismatch fails", (try? music.apply(.decrease)) == nil)
+musicBackend.running = false
+let musicReads = musicBackend.reads
+check("Music unavailable fails without read or launch", (try? music.apply(.increase)) == nil && musicBackend.reads == musicReads)
 if failures > 0 { exit(1) }

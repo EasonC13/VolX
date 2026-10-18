@@ -142,6 +142,12 @@ final class StatusBarController {
 
     private func showContextMenu(relativeTo button: NSStatusBarButton) {
         let menu = NSMenu()
+        let musicItem = NSMenuItem(title: "Command＋音量鍵控制 Music",
+            action: #selector(toggleCommandMusic), keyEquivalent: "")
+        musicItem.target = self
+        musicItem.state = model.commandMusicEnabled ? .on : .off
+        menu.addItem(musicItem)
+        menu.addItem(.separator())
         let launchItem = NSMenuItem(
             title: "登录时启动",
             action: #selector(toggleLaunchAtLogin),
@@ -160,6 +166,10 @@ final class StatusBarController {
         quitItem.target = self
         menu.addItem(quitItem)
         menu.popUp(positioning: nil, at: NSPoint(x: 0, y: -4), in: button)
+    }
+
+    @objc private func toggleCommandMusic() {
+        model.commandMusicEnabled.toggle()
     }
 
     @objc private func toggleLaunchAtLogin() {
