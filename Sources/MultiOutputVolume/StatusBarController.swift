@@ -147,6 +147,10 @@ final class StatusBarController {
         musicItem.target = self
         musicItem.state = model.commandMusicEnabled ? .on : .off
         menu.addItem(musicItem)
+        let diagnostics = NSMenuItem(title: "Copy Volume Key Diagnostics",
+            action: #selector(copyVolumeKeyDiagnostics), keyEquivalent: "")
+        diagnostics.target = self
+        menu.addItem(diagnostics)
         menu.addItem(.separator())
         let launchItem = NSMenuItem(
             title: "Launch at Login",
@@ -170,6 +174,10 @@ final class StatusBarController {
 
     @objc private func toggleCommandMusic() {
         model.commandMusicEnabled.toggle()
+    }
+    @objc private func copyVolumeKeyDiagnostics() {
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(model.volumeKeyDiagnostics, forType: .string)
     }
 
     @objc private func toggleLaunchAtLogin() {

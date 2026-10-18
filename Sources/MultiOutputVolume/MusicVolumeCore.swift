@@ -2,7 +2,10 @@ import Foundation
 
 struct MusicVolumeKey {
     static func effectiveModifiers(event: UInt64, session: UInt64, hid: UInt64) -> UInt64 {
-        event
+        // Consumer controls on another HID device may omit held keyboard flags.
+        // Union, never replace: Shift/Option/Control/Fn from either state must veto
+        // exact-Command routing. Preserve event-only Command for built-in keys.
+        (event | session | hid) & 0xffff0000
     }
 
     static func decode(type: UInt32, subtype: Int, data: Int, modifiers: UInt64, enabled: Bool) -> NativeVolumeKey? {

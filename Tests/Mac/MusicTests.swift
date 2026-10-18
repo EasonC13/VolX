@@ -19,6 +19,23 @@ final class MusicTests: XCTestCase {
         XCTAssertEqual(MusicVolumeKey.effectiveModifiers(event: 0, session: 0, hid: 0), 0)
     }
 
+    @MainActor func testExternalKnobNativeRoute() async throws {
+        let monitor = MediaKeyMonitor()
+        monitor.musicEnabled = true
+        let event = try XCTUnwrap(NSEvent.otherEvent(with: .systemDefined, location: .zero,
+            modifierFlags: [], timestamp: 0, windowNumber: 0, context: nil,
+            subtype: 8, data1: 0x0a00, data2: -1)?.cgEvent)
+        let done = expectation(description: "External knob Music action")
+        monitor.onMusicAction = { action in XCTAssertEqual(action, .increase); done.fulfill() }
+        XCTAssertNil(monitor.handle(event: event, type: CGEventType(rawValue: 14)!,
+            sessionModifiers: 1 << 20, hidModifiers: 0))
+        await fulfillment(of: [done], timeout: 1)
+        XCTAssertNotNil(monitor.handle(event: event, type: CGEventType(rawValue: 14)!,
+            sessionModifiers: (1 << 20) | (1 << 19), hidModifiers: 0))
+        monitor.musicEnabled = false
+        XCTAssertNotNil(monitor.handle(event: event, type: CGEventType(rawValue: 14)!,
+            sessionModifiers: 1 << 20, hidModifiers: 0))
+    }
     func testExactCommandRouting() {
         XCTAssertNil(MusicVolumeKey.decode(type: 14, subtype: 8, data: 0x0a00, modifiers: 1 << 20, enabled: false))
         XCTAssertEqual(MusicVolumeKey.decode(type: 14, subtype: 8, data: 0x0a00, modifiers: 1 << 20, enabled: true)?.action, .increase)

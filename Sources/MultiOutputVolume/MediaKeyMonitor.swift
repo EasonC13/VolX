@@ -23,6 +23,7 @@ struct RawHotKeyEventRecord: Sendable {
 }
 
 final class MediaKeyMonitor: @unchecked Sendable {
+    private(set) var volumeKeyDiagnostic = "No native volume event received"
     var musicEnabled = false
     var onMusicAction: (@MainActor (VolumeKeyAction) -> Void)?
     var onAction: (@MainActor (VolumeKeyAction, VolumeKeySource) -> Void)?
@@ -100,14 +101,24 @@ final class MediaKeyMonitor: @unchecked Sendable {
     }
 
     // Internal for native event integration tests. Invoked only on the main run loop.
-    func handle(event: CGEvent, type: CGEventType) -> Unmanaged<CGEvent>? {
+    func handle(event: CGEvent, type: CGEventType,
+                sessionModifiers: UInt64? = nil, hidModifiers: UInt64? = nil) -> Unmanaged<CGEvent>? {
         if type == .tapDisabledByTimeout || type == .tapDisabledByUserInput {
             if let eventTap { CGEvent.tapEnable(tap: eventTap, enable: true) }
             return Unmanaged.passUnretained(event)
         }
+        var modifiers = UInt64(event.flags.rawValue)
+        if type == systemDefinedEventType, let ns = NSEvent(cgEvent: event),
+           NativeVolumeKey.decode(type: type.rawValue, subtype: Int(ns.subtype.rawValue),
+               data: ns.data1, modifiers: 0) != nil {
+            let session = sessionModifiers ?? CGEventSource.flagsState(.combinedSessionState).rawValue
+            let hid = hidModifiers ?? CGEventSource.flagsState(.hidSystemState).rawValue
+            modifiers = MusicVolumeKey.effectiveModifiers(event: modifiers, session: session, hid: hid)
+            volumeKeyDiagnostic = "source=NX volume event=\(event.flags.rawValue & 0xffff0000) session=\(session & 0xffff0000) hid=\(hid & 0xffff0000) effective=\(modifiers) MusicEnabled=\(musicEnabled)"
+        }
         if type == systemDefinedEventType, let ns = NSEvent(cgEvent: event),
            let decision = MusicVolumeKey.decode(type: type.rawValue, subtype: Int(ns.subtype.rawValue),
-               data: ns.data1, modifiers: UInt64(ns.modifierFlags.rawValue), enabled: musicEnabled) {
+               data: ns.data1, modifiers: modifiers, enabled: musicEnabled) {
             if let action = decision.action { Task { @MainActor in self.onMusicAction?(action) } }
             return nil
         }
@@ -115,7 +126,7 @@ final class MediaKeyMonitor: @unchecked Sendable {
               let nsEvent = NSEvent(cgEvent: event),
               let decision = NativeVolumeKey.decode(type: type.rawValue,
                   subtype: Int(nsEvent.subtype.rawValue), data: nsEvent.data1,
-                  modifiers: UInt64(nsEvent.modifierFlags.rawValue)) else {
+                  modifiers: modifiers) else {
             return Unmanaged.passUnretained(event)
         }
         if let action = decision.action {

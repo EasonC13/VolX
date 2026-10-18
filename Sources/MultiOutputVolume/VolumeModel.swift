@@ -25,6 +25,9 @@ final class VolumeModel: ObservableObject {
     }
     private let musicQueue = DispatchQueue(label: "VolX.Music", qos: .userInitiated)
     private let musicController = MusicVolumeController(backend: AppleMusicBackend())
+    var volumeKeyDiagnostics: String {
+        "VolX \(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "development")\nAccessibility=\(AXIsProcessTrusted()) tapCreated=\(keyMonitor.eventTapCreated)\n\(keyMonitor.volumeKeyDiagnostic)"
+    }
 
     func handleMusic(_ action: VolumeKeyAction) {
         guard commandMusicEnabled else { return }
