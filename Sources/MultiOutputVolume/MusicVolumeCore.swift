@@ -1,6 +1,10 @@
 import Foundation
 
 struct MusicVolumeKey {
+    static func effectiveModifiers(event: UInt64, session: UInt64, hid: UInt64) -> UInt64 {
+        event
+    }
+
     static func decode(type: UInt32, subtype: Int, data: Int, modifiers: UInt64, enabled: Bool) -> NativeVolumeKey? {
         // Device-independent modifiers, including Caps Lock/Fn/numeric-pad, must be exact Command.
         guard enabled, modifiers & 0xffff0000 == 1 << 20 else { return nil }
