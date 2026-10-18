@@ -54,7 +54,7 @@ final class VolumeModelTests: XCTestCase {
         model.selectOnly("b")
         XCTAssertEqual(store.writes, 0)
         XCTAssertEqual(model.activeOutputUID, "b")
-        XCTAssertTrue(model.lastStatus.contains("未全部成功"))
+        XCTAssertTrue(model.lastStatus.contains("incomplete"))
     }
 
     @MainActor func testMissingDeclaredAggregateMemberRemainsUnconfirmed() {
@@ -67,13 +67,13 @@ final class VolumeModelTests: XCTestCase {
         XCTAssertFalse(model.isMuted)
         model.toggleMute(showHUD: false)
         XCTAssertFalse(model.isMuted)
-        XCTAssertTrue(model.lastStatus.contains("未确认：b"))
+        XCTAssertTrue(model.lastStatus.contains("Not confirmed: b"))
         model.refreshDevices()
         XCTAssertEqual(model.selectedDeviceUIDs, ["a", "b"])
         XCTAssertFalse(model.isMuted)
         model.setUnifiedVolume(0, showHUD: false)
         XCTAssertFalse(model.isMuted)
-        XCTAssertTrue(model.lastStatus.contains("未确认：b"))
+        XCTAssertTrue(model.lastStatus.contains("Not confirmed: b"))
     }
 
     @MainActor func testPartialMuteAndRestore() {
@@ -85,7 +85,7 @@ final class VolumeModelTests: XCTestCase {
         model.toggleMute(showHUD: false)
         XCTAssertFalse(model.isMuted)
         XCTAssertTrue(model.lastStatus.contains("Headphones"))
-        XCTAssertTrue(model.lastStatus.contains("未确认"))
+        XCTAssertTrue(model.lastStatus.contains("Not confirmed"))
         store.failUID = nil
         model.toggleMute(showHUD: false) // retry mute, preserving original per-device levels
         XCTAssertTrue(model.isMuted)
