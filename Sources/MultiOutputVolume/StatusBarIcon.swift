@@ -49,8 +49,8 @@ enum StatusBarIcon {
         }
         image.isTemplate = true
         image.accessibilityDescription = isMuted
-            ? "VolX 已静音"
-            : "VolX 音量 \(Int((volume * 100).rounded()))%"
+            ? "VolX Muted"
+            : "VolX Volume \(Int((volume * 100).rounded()))%"
         return image
     }
 

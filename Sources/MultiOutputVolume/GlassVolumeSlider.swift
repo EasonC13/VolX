@@ -60,7 +60,7 @@ struct GlassVolumeSlider: View {
             isDragging = false
         }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("音量")
+        .accessibilityLabel("Volume")
         .accessibilityValue("\(Int((value * 100).rounded()))%")
         .accessibilityAdjustableAction { direction in
             switch direction {

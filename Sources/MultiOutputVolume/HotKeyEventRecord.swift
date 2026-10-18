@@ -13,11 +13,11 @@ struct HotKeyEventRecord: Identifiable {
         let actionText: String
         switch action {
         case .mute:
-            actionText = muted ? "F10 静音" : "F10 取消静音"
+            actionText = muted ? "F10 Muted" : "F10 Unmute"
         case .decrease:
-            actionText = "F11 减小"
+            actionText = "F11 Down"
         case .increase:
-            actionText = "F12 增大"
+            actionText = "F12 Up"
         }
         let percent = Int((volume * 100).rounded())
         return "\(timeText)  \(actionText)  \(percent)%  \(source.rawValue)  \(result)"

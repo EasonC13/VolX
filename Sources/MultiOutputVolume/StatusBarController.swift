@@ -27,7 +27,7 @@ final class StatusBarController {
         button.imageScaling = .scaleNone
         button.title = ""
         button.setAccessibilityTitle("VolX")
-        button.setAccessibilityLabel("VolX 统一音量")
+        button.setAccessibilityLabel("VolX Volume Control")
         button.action = #selector(togglePopover(_:))
         button.target = self
         button.sendAction(on: [.leftMouseUp, .rightMouseUp])
@@ -142,14 +142,14 @@ final class StatusBarController {
 
     private func showContextMenu(relativeTo button: NSStatusBarButton) {
         let menu = NSMenu()
-        let musicItem = NSMenuItem(title: "Command＋音量鍵控制 Music",
+        let musicItem = NSMenuItem(title: "Use ⌘ + Volume Keys for Music",
             action: #selector(toggleCommandMusic), keyEquivalent: "")
         musicItem.target = self
         musicItem.state = model.commandMusicEnabled ? .on : .off
         menu.addItem(musicItem)
         menu.addItem(.separator())
         let launchItem = NSMenuItem(
-            title: "登录时启动",
+            title: "Launch at Login",
             action: #selector(toggleLaunchAtLogin),
             keyEquivalent: ""
         )
@@ -159,7 +159,7 @@ final class StatusBarController {
         menu.addItem(.separator())
 
         let quitItem = NSMenuItem(
-            title: "退出 VolX",
+            title: "Quit VolX",
             action: #selector(quitApplication),
             keyEquivalent: "q"
         )

@@ -16,10 +16,10 @@ enum MusicVolumeError: Error, LocalizedError {
     case unavailable, unconfirmed, automation, timeout
     var errorDescription: String? {
         switch self {
-        case .unavailable: return "Music 未运行（不会自动启动）"
-        case .unconfirmed: return "Music 音量未确认"
-        case .automation: return "Music 自动化失败：请检查系统设置 → 隐私与安全性 → 自动化"
-        case .timeout: return "Music 自动化超时"
+        case .unavailable: return "Music is not running (will not launch it)"
+        case .unconfirmed: return "Music volume not confirmed"
+        case .automation: return "Music automation failed: check System Settings > Privacy & Security > Automation"
+        case .timeout: return "Music automation timed out"
         }
     }
 }

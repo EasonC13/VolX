@@ -13,7 +13,7 @@ final class VolumeModel: ObservableObject {
     @Published var isVolumeSliderDragging = false
     @Published private(set) var isMuted: Bool
     @Published private(set) var lastStatus: String = ""
-    @Published private(set) var lastHotKeySource: String = "未触发"
+    @Published private(set) var lastHotKeySource: String = "Not triggered"
     @Published private(set) var hotKeyEvents: [HotKeyEventRecord] = []
     @Published var launchAtLoginEnabled: Bool
 
@@ -35,7 +35,7 @@ final class VolumeModel: ObservableObject {
                 guard let self else { return }
                 switch result {
                 case .success(let level):
-                    self.lastStatus = "Music \(level == 0 ? "静音" : "音量") \(level)%"
+                    self.lastStatus = "Music \(level == 0 ? "Muted" : "Volume") \(level)%"
                     self.hud.show(title: self.lastStatus, volume: Float(level) / 100,
                                   isMuted: level == 0, anchorRect: self.hudAnchorProvider?())
                 case .failure(let error):
@@ -131,8 +131,8 @@ final class VolumeModel: ObservableObject {
         // Even a partial switch may have changed the normal output. Follow actual routing.
         syncSelectionFromSystemOutput()
         syncVolumeFromSelectedDevices()
-        lastStatus = complete ? "已切换到 \(device.name)（输出及系统提示音均确认）"
-            : "切换未全部成功：\(device.name)；请检查系统输出与提示音输出"
+        lastStatus = complete ? "Switched to \(device.name) (output and sound effects confirmed)"
+            : "Output switch incomplete: \(device.name); check output and sound effects routing"
     }
 
     func selectPreferredGroup() {
@@ -141,7 +141,7 @@ final class VolumeModel: ObservableObject {
     }
 
     func openAirPlayOutput(_ device: AirPlayDevice) {
-        lastStatus = "请在系统声音设置中选择 \(device.name)"
+        lastStatus = "Select in System Sound Settings: \(device.name)"
         guard let url = URL(string: "x-apple.systempreferences:com.apple.Sound-Settings.extension") else {
             return
         }
@@ -260,7 +260,7 @@ final class VolumeModel: ObservableObject {
         """
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(text, forType: .string)
-        lastStatus = "诊断信息已复制"
+        lastStatus = "Diagnostics copied"
     }
 
     func toggleMute(showHUD: Bool = true) {
@@ -273,10 +273,10 @@ final class VolumeModel: ObservableObject {
         do {
             try LaunchAtLoginController.setEnabled(enabled)
             launchAtLoginEnabled = enabled
-            lastStatus = enabled ? "已开启登录时启动" : "已关闭登录时启动"
+            lastStatus = enabled ? "Launch at login enabled" : "Launch at login disabled"
         } catch {
             launchAtLoginEnabled = LaunchAtLoginController.isEnabled
-            lastStatus = "开机启动设置失败：\(error.localizedDescription)"
+            lastStatus = "Launch at login failed: \(error.localizedDescription)"
         }
     }
 
@@ -305,13 +305,13 @@ final class VolumeModel: ObservableObject {
     var controlTitle: String {
         let selected = selectedDevices
         if isMultiOutputSelected {
-            return devices.first(where: { $0.uid == activeOutputUID })?.name ?? "双设备输出"
+            return devices.first(where: { $0.uid == activeOutputUID })?.name ?? "Multi-output"
         }
-        return selected.first?.name ?? "统一音量"
+        return selected.first?.name ?? "Volume Control"
     }
 
     var ddcStatusText: String {
-        "本修复版已禁用 DDC：显示器音量不受支持；仅控制 CoreAudio 音箱/耳机"
+        "DDC is disabled: monitor volume is unsupported. Controls CoreAudio speakers and headphones only."
     }
 
     static func shouldShowCustomHUD(for source: VolumeKeySource?) -> Bool {
@@ -349,8 +349,8 @@ final class VolumeModel: ObservableObject {
         persist()
         syncVolumeFromSelectedDevices()
         if changedExternally {
-            let title = devices.first(where: { $0.uid == systemUID })?.name ?? "系统输出"
-            lastStatus = "已跟随系统切换到 \(title)"
+            let title = devices.first(where: { $0.uid == systemUID })?.name ?? "System Output"
+            lastStatus = "Following system output: \(title)"
         }
     }
 
@@ -409,11 +409,11 @@ final class VolumeModel: ObservableObject {
             selectedDevices.first(where: { $0.uid == outcome.uid })?.name ?? outcome.uid
         }
         if outcomes.isEmpty {
-            lastStatus = "没有可控制的输出设备"
+            lastStatus = "No controllable output devices"
         } else if failures.isEmpty {
-            lastStatus = "已确认 \(outcomes.count) 个设备\(isMuted ? "静音" : "音量")"
+            lastStatus = "Confirmed \(outcomes.count) devices: \(isMuted ? "Muted" : "Volume")"
         } else {
-            lastStatus = "部分/全部未确认：\(failures.joined(separator: "、"))；请检查实际声音（DDC 不支持）"
+            lastStatus = "Not confirmed: \(failures.joined(separator: ", ")); check actual sound (DDC unsupported)"
         }
         persist()
         if showHUD {

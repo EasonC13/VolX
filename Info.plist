@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
     <key>CFBundleDevelopmentRegion</key>
-    <string>zh_CN</string>
+    <string>en</string>
     <key>CFBundleExecutable</key>
     <string>MultiOutputVolume</string>
     <key>CFBundleDisplayName</key>
@@ -31,11 +31,11 @@
     <key>NSHumanReadableCopyright</key>
     <string>Open source local utility.</string>
     <key>NSAppleEventsUsageDescription</key>
-    <string>启用 Command＋音量鍵后，控制 Apple Music 应用音量（包括其 AirPlay 输出）；不会启动 Music 或更改系统输出。</string>
+    <string>Controls Apple Music app volume, including its AirPlay output, when Command + Volume Keys is enabled. Does not launch Music or change system output.</string>
     <key>NSInputMonitoringUsageDescription</key>
-    <string>仅用于接管原生音量媒体键，不拦截普通或组合功能键。</string>
+    <string>Handles native volume keys, and optionally Command + Volume Keys for Music. Ordinary function keys are not intercepted.</string>
     <key>NSLocalNetworkUsageDescription</key>
-    <string>用于发现同一网络中的 AirPlay 音频输出设备。</string>
+    <string>Discovers AirPlay audio outputs on the local network.</string>
     <key>NSBonjourServices</key>
     <array>
         <string>_airplay._tcp</string>

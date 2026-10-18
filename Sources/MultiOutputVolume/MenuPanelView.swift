@@ -33,7 +33,7 @@ struct MenuPanelView: View {
                 .padding(.top, 5)
                 .padding(.horizontal, -7)
             ScrollView {
-                Text(model.lastStatus.isEmpty ? "仅支持 CoreAudio；DDC 已禁用" : model.lastStatus)
+                Text(model.lastStatus.isEmpty ? "CoreAudio only; DDC disabled" : model.lastStatus)
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -82,8 +82,8 @@ struct MenuPanelView: View {
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .help(model.isMuted ? "取消静音" : "静音")
-            .accessibilityLabel(model.isMuted ? "取消静音" : "静音")
+            .help(model.isMuted ? "Unmute" : "Muted")
+            .accessibilityLabel(model.isMuted ? "Unmute" : "Muted")
 
             GlassVolumeSlider(
                 value: Binding(
@@ -113,7 +113,7 @@ struct MenuPanelView: View {
 
     private var deviceList: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Text("输出")
+            Text("Output")
                 .font(.system(size: 11.5, weight: .semibold))
                 .foregroundStyle(.secondary)
                 .frame(height: 18, alignment: .leading)
@@ -145,21 +145,21 @@ struct MenuPanelView: View {
         VStack(spacing: 2) {
             if model.balanceDevices.count == 2 {
                 HStack {
-                    Text("输出平衡")
+                    Text("Output Balance")
                     Spacer()
                     Button { model.setOutputBalance(0) } label: {
                         Image(systemName: "arrow.counterclockwise")
                     }
                     .buttonStyle(.plain)
-                    .help("重置输出平衡")
-                    .accessibilityLabel("重置输出平衡")
+                    .help("Reset Output Balance")
+                    .accessibilityLabel("Reset Output Balance")
                 }
                 Slider(value: Binding(
                     get: { Double(model.outputBalance) },
                     set: { model.setOutputBalance(Float($0)) }
                 ), in: -1...1)
                 .controlSize(.small)
-                .accessibilityLabel("两个输出设备的音量平衡")
+                .accessibilityLabel("Volume balance between two outputs")
                 .disabled(model.balanceDevices.contains { !$0.canSetVolume })
                 HStack(spacing: 8) {
                     ForEach(Array(model.balanceDevices.enumerated()), id: \.element.uid) { index, device in
@@ -200,7 +200,7 @@ struct MenuPanelView: View {
             )
         }
         .buttonStyle(.plain)
-        .help("在系统声音设置中选择 \(device.name)")
+        .help("Select in System Sound Settings: \(device.name)")
     }
 
     private func rowContent(
@@ -228,18 +228,18 @@ struct MenuPanelView: View {
         }
         .frame(height: Self.rowHeight)
         .contentShape(Rectangle())
-        .accessibilityValue(selected ? "已选择" : "")
+        .accessibilityValue(selected ? "Selected" : "")
     }
 
     private var footer: some View {
-        Button("声音设置...") {
+        Button("Sound Settings…") {
             if let url = URL(string: "x-apple.systempreferences:com.apple.Sound-Settings.extension") {
                 NSWorkspace.shared.open(url)
             }
         }
         .buttonStyle(.plain)
         .font(.system(size: 13))
-        .help("打开系统声音设置")
+        .help("Open System Sound Settings")
         .frame(height: 28)
     }
 
