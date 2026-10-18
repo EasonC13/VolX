@@ -3,6 +3,26 @@ import XCTest
 @testable import MultiOutputVolume
 
 final class MusicTests: XCTestCase {
+    // Explicit integration test: launch Music, never start playback, restore volume.
+    func testActualOsascriptBackendReadWriteReadback() throws {
+        let launch = Process()
+        launch.executableURL = URL(fileURLWithPath: "/usr/bin/open")
+        launch.arguments = ["-a", "Music", "-g"]
+        try launch.run()
+        launch.waitUntilExit()
+        XCTAssertEqual(launch.terminationStatus, 0)
+        let backend = AppleMusicBackend()
+        let deadline = Date().addingTimeInterval(15)
+        while !backend.isRunning() && Date() < deadline { Thread.sleep(forTimeInterval: 0.1) }
+        let original = try backend.read()
+        defer { try? backend.write(original) }
+        let target = original == 42 ? 43 : 42
+        try backend.write(target)
+        XCTAssertEqual(try backend.read(), target)
+        try backend.write(original)
+        XCTAssertEqual(try backend.read(), original)
+    }
+
     func testExactCommandRouting() {
         XCTAssertNil(MusicVolumeKey.decode(type: 14, subtype: 8, data: 0x0a00, modifiers: 1 << 20, enabled: false))
         XCTAssertEqual(MusicVolumeKey.decode(type: 14, subtype: 8, data: 0x0a00, modifiers: 1 << 20, enabled: true)?.action, .increase)
